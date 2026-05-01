@@ -1,6 +1,6 @@
 {
   "name": "snipflow",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A simple and fast code snippet manager CLI.",
   "type": "module",
   "bin": {
