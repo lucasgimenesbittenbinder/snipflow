@@ -26,6 +26,14 @@
   ],
   "author": "",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucasgimenesbittenbinder/snipflow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lucasgimenesbittenbinder/snipflow/issues"
+  },
+  "homepage": "https://github.com/lucasgimenesbittenbinder/snipflow#readme",
   "engines": {
     "node": ">=18"
   },
