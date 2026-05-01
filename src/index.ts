@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
+import { registerDeleteCommand } from "./commands/delete.js";
 import { registerGetCommand } from "./commands/get.js";
 import { runInteractiveCommand } from "./commands/interactive.js";
 import { registerListCommand } from "./commands/list.js";
@@ -20,6 +21,7 @@ registerGetCommand(program);
 registerShowCommand(program);
 registerSearchCommand(program);
 registerListCommand(program);
+registerDeleteCommand(program);
 
 if (process.argv.length <= 2) {
   await runInteractiveCommand();
