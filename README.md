@@ -1,133 +1,139 @@
-# snipflow
+# ⚡ snipflow
 
-Um CLI pequeno para guardar e recuperar snippets sem abrir editor, nota, gist ou bloco de texto solto.
-
-A ideia é ser simples: você salva um trecho com um nome, encontra depois pelo nome e copia de volta quando precisar.
-
-## Instalação local
+Stop copy-pasting code. Instantly save and reuse snippets from your terminal.
 
 ```bash
-npm install
-npm run build
-npm link
+npm install -g snipflow
 ```
 
-Depois disso, o comando `snip` fica disponível no terminal:
+---
+
+## 🚀 Interactive Snippet Picker
+
+![snipflow demo](./assets/demo.gif)
+
+Search, preview and copy snippets in seconds with a beautiful interactive UI.
+
+* 🔍 Real-time search
+* 👀 Live preview
+* ⚡ Instant copy to clipboard
+* ⌨️ Keyboard navigation
+
+👉 Try it now:
 
 ```bash
-snip list
+snip
 ```
 
-Para rodar sem instalar globalmente durante o desenvolvimento:
+---
+
+## ⚡ Quick Start
+
+Save a snippet:
 
 ```bash
-npm run dev -- list
+snip save fetch-user
 ```
 
-## Uso rápido
-
-Salvar um snippet direto pelo terminal:
+Open interactive picker:
 
 ```bash
-snip save hello "console.log('hello')"
+snip
 ```
 
-Salvar um snippet que já está no clipboard:
+Or get directly:
 
 ```bash
-snip save meu-snippet
+snip get fetch-user
 ```
 
-Salvar um snippet usando pipe:
+---
+
+## 🧠 How it works
+
+### Interactive mode
 
 ```bash
-cat exemplo.ts | snip save exemplo --stdin
+snip
 ```
 
-Ver o conteúdo sem mexer no clipboard:
+* Type to search
+* Navigate with ↑ ↓
+* Press Enter to copy
+* Press Esc to exit
+
+### Example
+
+```
+Search snippets... (type to filter) — 2 results
+
+❯ fetch-user
+  fetch-products
+
+Preview:
+------------------------
+  fetch('/api/users')
+  .then(res => res.json())
+
+↑↓ navigate • Enter copy • Esc cancel
+```
+
+---
+
+## ✨ Features
+
+* ⚡ Interactive snippet picker (main feature)
+* 🔍 Real-time search
+* 👀 Preview before copying
+* 📋 Clipboard integration
+* ⚡ Instant copy on selection
+* 🧠 Smart UX (keyboard-first)
+* 💾 Local storage (no setup needed)
+
+---
+
+## 🛠 Commands
 
 ```bash
-snip show hello
+snip save <name>     # Save snippet from clipboard
+snip get <name>      # Copy snippet to clipboard
+snip search <term>   # Search snippets
+snip list            # List all snippets
+snip                 # Open interactive picker
 ```
 
-Copiar um snippet de volta para o clipboard:
+---
 
-```bash
-snip get hello
-```
+## 🎯 Why snipflow?
 
-Buscar por nome:
+Copy-pasting code is:
 
-```bash
-snip search hel
-```
+* ❌ repetitive
+* ❌ slow
+* ❌ error-prone
 
-Listar tudo:
+snipflow makes it:
 
-```bash
-snip list
-```
+* ⚡ fast
+* 🧠 organized
+* 🎯 effortless
 
-## Exemplo real
+---
 
-```bash
-snip save orderform "await fetch('/api/checkout/pub/orderForm').then(r => r.json())"
-snip show orderform
-snip get orderform
-```
+## 🚀 Roadmap
 
-Se quiser substituir um snippet que já existe, use `--force`:
+* [ ] Snippet history (`snip last`)
+* [ ] Snippet delete (`snip delete`)
+* [ ] Tags & filtering
 
-```bash
-snip save orderform "await fetch('/api/checkout/pub/orderForm').then(r => r.json())" --force
-```
+---
 
-## Comandos
+## 🤝 Contributing
 
-```bash
-snip save <name> [content]
-snip save <name> --stdin
-snip save <name> --force
-snip get <name>
-snip show <name>
-snip search <term>
-snip list
-```
+PRs are welcome. Feel free to open issues or suggest improvements.
 
-## Onde os snippets ficam salvos?
+---
 
-O arquivo é criado automaticamente em:
+## ⭐ Support
 
-```bash
-~/.snipflow/snippets.json
-```
-
-Cada item salvo tem este formato:
-
-```json
-{
-  "name": "orderform",
-  "content": "await fetch('/api/checkout/pub/orderForm').then(r => r.json())",
-  "createdAt": "2026-05-01T00:00:00.000Z"
-}
-```
-
-## Desenvolvimento
-
-```bash
-npm install
-npm run dev -- list
-npm run check
-```
-
-Gerar build:
-
-```bash
-npm run build
-```
-
-Rodar o build:
-
-```bash
-npm start -- list
-```
+If this helped you, consider giving a star ⭐

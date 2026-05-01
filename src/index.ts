@@ -2,6 +2,7 @@
 
 import { Command } from "commander";
 import { registerGetCommand } from "./commands/get.js";
+import { runInteractiveCommand } from "./commands/interactive.js";
 import { registerListCommand } from "./commands/list.js";
 import { registerSaveCommand } from "./commands/save.js";
 import { registerSearchCommand } from "./commands/search.js";
@@ -20,4 +21,8 @@ registerShowCommand(program);
 registerSearchCommand(program);
 registerListCommand(program);
 
-program.parse();
+if (process.argv.length <= 2) {
+  await runInteractiveCommand();
+} else {
+  program.parse();
+}
