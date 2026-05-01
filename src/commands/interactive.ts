@@ -13,12 +13,25 @@ import {
 import chalk from "chalk";
 import Fuse from "fuse.js";
 import { writeClipboard } from "../utils/clipboard.js";
-import { loadSnippets, type Snippet } from "../utils/storage.js";
-import { truncateSnippet } from "../utils/text.js";
+import { loadSnippets, recordSnippetUsage, type Snippet } from "../utils/storage.js";
+import { formatRelativeTime, truncateSnippet } from "../utils/text.js";
 
-type InteractiveConfig = {
+type InteractiveConfig<T extends Snippet> = {
   message: string;
-  snippets: Snippet[];
+  placeholder?: string;
+  showCountInMessage?: boolean;
+  showMessageInPlaceholder?: boolean;
+  renderItemSuffix?: (snippet: T) => string | undefined;
+  snippets: T[];
+};
+
+type RunSnippetPickerOptions<T extends Snippet> = {
+  emptyMessage: string;
+  message?: string;
+  placeholder?: string;
+  showCountInMessage?: boolean;
+  showMessageInPlaceholder?: boolean;
+  renderItemSuffix?: (snippet: T) => string | undefined;
 };
 
 const maxResults = 24;
@@ -27,7 +40,7 @@ const previewLineCount = 5;
 const previewLineLength = 88;
 const previewSeparatorLength = 24;
 
-function createSnippetSearch(snippets: Snippet[]): Fuse<Snippet> {
+function createSnippetSearch<T extends Snippet>(snippets: T[]): Fuse<T> {
   return new Fuse(snippets, {
     includeScore: true,
     ignoreLocation: true,
@@ -39,7 +52,7 @@ function createSnippetSearch(snippets: Snippet[]): Fuse<Snippet> {
   });
 }
 
-function searchSnippets(snippets: Snippet[], fuse: Fuse<Snippet>, term: string): Snippet[] {
+function searchSnippets<T extends Snippet>(snippets: T[], fuse: Fuse<T>, term: string): T[] {
   const normalizedTerm = term.trim();
 
   if (!normalizedTerm) {
@@ -49,11 +62,11 @@ function searchSnippets(snippets: Snippet[], fuse: Fuse<Snippet>, term: string):
   return fuse.search(normalizedTerm, { limit: maxResults }).map((result) => result.item);
 }
 
-function firstSelectableIndex(results: Snippet[]): number {
+function firstSelectableIndex<T>(results: T[]): number {
   return results.length > 0 ? 0 : -1;
 }
 
-function clampActiveIndex(active: number, results: Snippet[]): number {
+function clampActiveIndex<T>(active: number, results: T[]): number {
   if (results.length === 0) {
     return -1;
   }
@@ -65,7 +78,7 @@ function clampActiveIndex(active: number, results: Snippet[]): number {
   return Math.min(active, results.length - 1);
 }
 
-function visibleResults(results: Snippet[], active: number): Snippet[] {
+function visibleResults<T>(results: T[], active: number): T[] {
   if (results.length <= pageSize) {
     return results;
   }
@@ -77,6 +90,14 @@ function visibleResults(results: Snippet[], active: number): Snippet[] {
   );
 
   return results.slice(start, start + pageSize);
+}
+
+function renderSnippetLabel(snippet: Snippet, isActive: boolean, suffix?: string): string {
+  const marker = isActive ? chalk.cyan("❯") : chalk.dim(" ");
+  const name = isActive ? chalk.cyan.bold(snippet.name) : chalk.dim(snippet.name);
+  const extra = suffix ? ` ${chalk.dim(suffix)}` : "";
+
+  return `${marker} ${name}${extra}`;
 }
 
 function renderPreview(snippet: Snippet | undefined): string {
@@ -100,107 +121,119 @@ function renderPreview(snippet: Snippet | undefined): string {
     .join("\n");
 }
 
-const snippetPrompt = createPrompt<Snippet | undefined, InteractiveConfig>((config, done) => {
-  const [status, setStatus] = useState<Status>("idle");
-  const [term, setTerm] = useState("");
-  const [active, setActive] = useState(0);
-  const canceled = useRef(false);
-  const fuse = useMemo(() => createSnippetSearch(config.snippets), [config.snippets]);
-  const results = searchSnippets(config.snippets, fuse, term);
-  const safeActive = clampActiveIndex(active, results);
-  const selected = safeActive >= 0 ? results[safeActive] : undefined;
-  const prefix = usePrefix({ status });
+function createSnippetPrompt<T extends Snippet>() {
+  return createPrompt<T | undefined, InteractiveConfig<T>>((config, done) => {
+    const [status, setStatus] = useState<Status>("idle");
+    const [term, setTerm] = useState("");
+    const [active, setActive] = useState(0);
+    const canceled = useRef(false);
+    const fuse = useMemo(() => createSnippetSearch(config.snippets), [config.snippets]);
+    const results = searchSnippets(config.snippets, fuse, term);
+    const safeActive = clampActiveIndex(active, results);
+    const selected = safeActive >= 0 ? results[safeActive] : undefined;
+    const prefix = usePrefix({ status });
 
-  useKeypress((key, readline) => {
-    if (key.name === "escape") {
-      canceled.current = true;
-      setStatus("done");
-      done(undefined);
-      return;
-    }
-
-    if (isEnterKey(key)) {
-      if (!selected) {
+    useKeypress((key, readline) => {
+      if (key.name === "escape") {
+        canceled.current = true;
+        setStatus("done");
+        done(undefined);
         return;
       }
 
-      setStatus("done");
-      done(selected);
-      return;
+      if (isEnterKey(key)) {
+        if (!selected) {
+          return;
+        }
+
+        setStatus("done");
+        done(selected);
+        return;
+      }
+
+      if (isUpKey(key)) {
+        readline.clearLine(0);
+        setActive(safeActive <= 0 ? results.length - 1 : safeActive - 1);
+        return;
+      }
+
+      if (isDownKey(key)) {
+        readline.clearLine(0);
+        setActive(safeActive >= results.length - 1 ? 0 : safeActive + 1);
+        return;
+      }
+
+      setTerm(readline.line);
+      setActive(firstSelectableIndex(searchSnippets(config.snippets, fuse, readline.line)));
+    });
+
+    const resultCount = results.length;
+    const resultLabel = `${resultCount} ${resultCount === 1 ? "result" : "results"}`;
+    const message = chalk.bold(
+      config.showCountInMessage === true
+        ? `${config.message} (${resultLabel})`
+        : config.message
+    );
+    const defaultPlaceholder = config.showMessageInPlaceholder === false
+      ? config.placeholder ?? "Type to filter"
+      : `${config.placeholder ?? "Search snippets... (type to filter)"} — ${resultLabel}`;
+    const query = term
+      ? chalk.cyan(`${term} ${chalk.dim(`(${resultLabel})`)}`)
+      : chalk.gray(defaultPlaceholder);
+    const header = [prefix, message, query].filter(Boolean).join(" ").trimEnd();
+
+    if (status === "done") {
+      if (canceled.current) {
+        return chalk.gray("Canceled");
+      }
+
+      return [prefix, message, chalk.cyan(selected?.name ?? "")]
+        .filter(Boolean)
+        .join(" ")
+        .trimEnd();
     }
 
-    if (isUpKey(key)) {
-      readline.clearLine(0);
-      setActive(safeActive <= 0 ? results.length - 1 : safeActive - 1);
-      return;
-    }
+    const list = results.length === 0
+      ? chalk.yellow("⚠ No snippets found (0 results)")
+      : visibleResults(results, safeActive)
+        .map((item) => {
+          const isActive = item === selected;
+          const suffix = config.renderItemSuffix?.(item);
+          return renderSnippetLabel(item, isActive, suffix);
+        })
+        .join("\n");
 
-    if (isDownKey(key)) {
-      readline.clearLine(0);
-      setActive(safeActive >= results.length - 1 ? 0 : safeActive + 1);
-      return;
-    }
-
-    setTerm(readline.line);
-    setActive(firstSelectableIndex(searchSnippets(config.snippets, fuse, readline.line)));
-  });
-
-  const message = chalk.bold(config.message);
-  const resultCount = results.length;
-  const resultLabel = `${resultCount} ${resultCount === 1 ? "result" : "results"}`;
-  const query = term
-    ? chalk.cyan(`${term} ${chalk.dim(`(${resultLabel})`)}`)
-    : chalk.gray(`Search snippets... (type to filter) — ${resultLabel}`);
-  const header = [prefix, message, query].filter(Boolean).join(" ").trimEnd();
-
-  if (status === "done") {
-    if (canceled.current) {
-      return chalk.gray("Canceled");
-    }
-
-    return [prefix, message, chalk.cyan(selected?.name ?? "")]
-      .filter(Boolean)
-      .join(" ")
-      .trimEnd();
-  }
-
-  const list = results.length === 0
-    ? chalk.yellow("⚠ No snippets found (0 results)")
-    : visibleResults(results, safeActive)
-      .map((item) => {
-        const isActive = item === selected;
-        const marker = isActive ? chalk.cyan("❯") : chalk.dim(" ");
-        const name = isActive ? chalk.cyan.bold(item.name) : chalk.dim(item.name);
-
-        return `${marker} ${name}`;
-      })
+    const body = [
+      list,
+      " ",
+      " ",
+      renderPreview(selected),
+      " ",
+      chalk.dim("↑↓ navigate • Enter copy • Esc cancel")
+    ]
+      .filter((line) => line !== "")
       .join("\n");
 
-  const body = [
-    list,
-    " ",
-    " ",
-    renderPreview(selected),
-    " ",
-    chalk.dim("↑↓ navigate • Enter copy • Esc cancel")
-  ]
-    .filter((line) => line !== "")
-    .join("\n");
+    return [header, body];
+  });
+}
 
-  return [header, body];
-});
-
-export async function runInteractiveCommand(): Promise<void> {
+export async function runSnippetPicker<T extends Snippet>(
+  snippets: T[],
+  options: RunSnippetPickerOptions<T>
+): Promise<void> {
   try {
-    const snippets = loadSnippets();
-
     if (snippets.length === 0) {
-      console.log(chalk.yellow("No snippets available"));
+      console.log(chalk.yellow(options.emptyMessage));
       return;
     }
 
-    const selected = await snippetPrompt({
-      message: "Search snippets",
+    const selected = await createSnippetPrompt<T>()({
+      message: options.message ?? "Search snippets",
+      placeholder: options.placeholder,
+      showCountInMessage: options.showCountInMessage,
+      showMessageInPlaceholder: options.showMessageInPlaceholder,
+      renderItemSuffix: options.renderItemSuffix,
       snippets
     });
 
@@ -210,6 +243,7 @@ export async function runInteractiveCommand(): Promise<void> {
 
     try {
       await writeClipboard(selected.content);
+      recordSnippetUsage(selected.name);
       console.log(chalk.green(`✔ Copied "${selected.name}" to clipboard`));
     } catch {
       console.log(chalk.yellow("Could not copy snippet to clipboard."));
@@ -221,4 +255,10 @@ export async function runInteractiveCommand(): Promise<void> {
 
     console.log(chalk.yellow(message));
   }
+}
+
+export async function runInteractiveCommand(): Promise<void> {
+  await runSnippetPicker(loadSnippets(), {
+    emptyMessage: "No snippets available"
+  });
 }

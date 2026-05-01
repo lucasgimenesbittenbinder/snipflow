@@ -10,8 +10,6 @@ npm install -g snipflow
 
 ## 🚀 Interactive Snippet Picker
 
-![snipflow demo](./assets/demo.gif)
-
 Search, preview and copy snippets in seconds with a beautiful interactive UI.
 
 * 🔍 Real-time search
@@ -41,10 +39,22 @@ Open interactive picker:
 snip
 ```
 
-Or get directly:
+Get a snippet directly:
 
 ```bash
 snip get fetch-user
+```
+
+View recently used snippets:
+
+```bash
+snip last
+```
+
+Delete a snippet:
+
+```bash
+snip delete fetch-user
 ```
 
 ---
@@ -62,18 +72,32 @@ snip
 * Press Enter to copy
 * Press Esc to exit
 
+---
+
+### Recent snippets
+
+```bash
+snip last
+```
+
+* Shows recently used snippets
+* Includes relative time (e.g. `2m ago`)
+* Same interactive experience
+
+---
+
 ### Example
 
 ```
-Search snippets... (type to filter) — 2 results
+Recently used snippets (3 results)
 
-❯ fetch-user
-  fetch-products
+❯ orderform   (2m ago)
+  login       (10m ago)
+  debounce    (1h ago)
 
 Preview:
 ------------------------
-  fetch('/api/users')
-  .then(res => res.json())
+  await fetch('/api/checkout/pub/orderForm').then(r => r.json())
 
 ↑↓ navigate • Enter copy • Esc cancel
 ```
@@ -82,12 +106,13 @@ Preview:
 
 ## ✨ Features
 
-* ⚡ Interactive snippet picker (main feature)
+* ⚡ Interactive snippet picker
 * 🔍 Real-time search
 * 👀 Preview before copying
 * 📋 Clipboard integration
 * ⚡ Instant copy on selection
-* 🧠 Smart UX (keyboard-first)
+* 🧠 Recently used snippets (`snip last`)
+* 🗑 Safe deletion with confirmation
 * 💾 Local storage (no setup needed)
 
 ---
@@ -95,11 +120,13 @@ Preview:
 ## 🛠 Commands
 
 ```bash
-snip save <name>     # Save snippet from clipboard
-snip get <name>      # Copy snippet to clipboard
-snip search <term>   # Search snippets
-snip list            # List all snippets
-snip                 # Open interactive picker
+snip save <name>        # Save snippet from clipboard
+snip get <name>         # Copy snippet to clipboard
+snip search <term>      # Search snippets
+snip list               # List all snippets
+snip last               # Show recent snippets
+snip delete <name>      # Delete snippet (with confirmation)
+snip                    # Open interactive picker
 ```
 
 ---
@@ -122,8 +149,6 @@ snipflow makes it:
 
 ## 🚀 Roadmap
 
-* [ ] Snippet history (`snip last`)
-* [ ] Snippet delete (`snip delete`)
 * [ ] Tags & filtering
 
 ---

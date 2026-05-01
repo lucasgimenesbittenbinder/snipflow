@@ -37,6 +37,30 @@ export function truncateSnippet(
   };
 }
 
+export function formatRelativeTime(timestamp: string, now: Date = new Date()): string {
+  const then = new Date(timestamp);
+  const diffMs = now.getTime() - then.getTime();
+
+  if (!Number.isFinite(diffMs) || diffMs < 60000) {
+    return "just now";
+  }
+
+  const minutes = Math.floor(diffMs / 60000);
+
+  if (minutes < 60) {
+    return `${minutes}m ago`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
+
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
 export async function readStdin(): Promise<string> {
   const chunks: Buffer[] = [];
 

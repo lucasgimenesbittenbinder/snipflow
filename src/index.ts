@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { registerDeleteCommand } from "./commands/delete.js";
 import { registerGetCommand } from "./commands/get.js";
 import { runInteractiveCommand } from "./commands/interactive.js";
+import { registerLastCommand } from "./commands/last.js";
 import { registerListCommand } from "./commands/list.js";
 import { registerSaveCommand } from "./commands/save.js";
 import { registerSearchCommand } from "./commands/search.js";
@@ -22,6 +23,7 @@ registerShowCommand(program);
 registerSearchCommand(program);
 registerListCommand(program);
 registerDeleteCommand(program);
+registerLastCommand(program);
 
 if (process.argv.length <= 2) {
   await runInteractiveCommand();

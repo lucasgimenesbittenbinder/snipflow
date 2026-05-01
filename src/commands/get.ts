@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import { writeClipboard } from "../utils/clipboard.js";
-import { findSnippetByName } from "../utils/storage.js";
+import { findSnippetByName, recordSnippetUsage } from "../utils/storage.js";
 import { previewContent } from "../utils/text.js";
 
 export function registerGetCommand(program: Command): void {
@@ -19,6 +19,7 @@ export function registerGetCommand(program: Command): void {
         }
 
         await writeClipboard(snippet.content);
+        recordSnippetUsage(snippet.name);
         console.log(`Snippet "${name}" copied to clipboard.`);
         console.log(`Preview: ${previewContent(snippet.content)}`);
       } catch (error) {

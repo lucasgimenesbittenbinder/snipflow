@@ -3,7 +3,12 @@ import { stdin as input, stdout as output } from "node:process";
 import { emitKeypressEvents } from "node:readline";
 import { Command } from "commander";
 import chalk from "chalk";
-import { loadSnippets, saveSnippets, type Snippet } from "../utils/storage.js";
+import {
+  loadSnippets,
+  removeSnippetFromHistory,
+  saveSnippets,
+  type Snippet
+} from "../utils/storage.js";
 
 type DeleteOptions = {
   force?: boolean;
@@ -97,6 +102,7 @@ export function registerDeleteCommand(program: Command): void {
         }
 
         saveSnippets(deleteSnippet(snippets, name));
+        removeSnippetFromHistory(name);
         console.log(chalk.green(`✔ Deleted '${name}'`));
         console.log();
       } catch {
